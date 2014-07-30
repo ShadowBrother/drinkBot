@@ -1,0 +1,12 @@
+<div id="adminPanel" class="floatRight">
+    {% if g.user.is_authenticated() %}
+    <h3>{{g.user.username}} is logged in</h3>
+    <ul class="adminOptions">
+    <li><a href="{{url_for('logout')}}">Log Out</a></li>
+    <li><a href="{{url_for('inventory')}}">Inventory</a></li>
+    <li><a href="{{url_for('drinkBot')}}">Menu</a></li>
+    </ul>
+    {% else %}
+    <a href="{{url_for('login')}}">Log In</a>
+    {% endif %}
+</div>

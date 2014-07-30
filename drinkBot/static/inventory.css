@@ -1,0 +1,38 @@
+.hidden
+{
+    display: none;
+}
+
+#inventoryList
+{
+    
+    list-style: none;
+
+}
+
+input[type="checkbox"]
+{
+    
+    
+    float:left;
+}
+
+#inventoryList li
+{
+    
+    float:left;
+}
+
+.liquid
+{
+    
+    clear:both;
+}
+
+#removeBtn
+{
+    
+    position:relative;
+    left:30px;
+
+}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>DrinkBot Login Page</title>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/static/login.css"/>
+  <script src="/resources/jquery-1.11.1.min.js"></script>
+  <script src="/static/login.js"></script>
+</head>
+<body>
+{% include "flash.html" %}
+<form id='login' action='' method='POST'>
+<label for="username">Username</label><input type='text' name="username" id="username"/>
+<label for="password">Password</label><input type="text" name="password" id="password"/>
+<input type='submit' name="loginBtn" id="loginBtn" value="Login"/>
+</form>

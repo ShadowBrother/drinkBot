@@ -1,0 +1,29 @@
+.floatLeft
+{
+    float:left;
+}
+
+.floatRight
+{
+    float:right;
+}
+
+#adminPanel
+{
+    outline: black solid thin;
+    margin-right: 10px;
+    padding: 5px;
+    background: lightgrey;
+    
+}
+
+.adminOptions
+{
+    list-style: none;
+
+}
+
+.adminOptions a
+{
+   text-decoration:none; 
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>DrinkBot</title>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/static/drinkBot.css"/>
+  <link rel="stylesheet" href="/static/adminBar.css"/>
+  <script src="/resources/jquery-1.11.1.min.js"></script>
+  <script src="/resources/jquery-ui-1.10.4.custom.min.js"></script>
+  <script src="/static/drinkBot.js"></script>
+</head>
+<body>
+	<h1>Drink Menu</h1>
+    {% include "adminBar.html" %}
+	{% include "flash.html" ignore missing %}
+    <form id="searchForm" action="" method="POST">
+		<input id="search" name="search" type="text"/>
+		<input id="availableOnly" name="availableOnly" type="checkbox" value="True" checked="True"/>
+		<label for="availableOnly">Show only available drinks</label>
+		<input type="submit" name="searchBtn" id="searchBtn" value="Search"/>
+	</form>
+	<div id="drinks" class="floatLeft">
+    
+	{% for drink in drinks %}
+	{% if not availableOnly or drink.available() %} 
+		
+        <h3 class="drink">{{drink.name}} {% if not drink.available() %} <span class='unavailable'> - Unavailable</span>{% endif %} </h3>
+        <div class="ingredients">
+            <form name="orderForm" action="{{url_for("order")}}" method="POST" class="orderForm" onSubmit="submitOrder(this)">
+                <ul>
+                {% for ing in drink.mixes	%}
+                    <li>{{ing.amount}} % {{ing.liquid.name}} 
+                    {% if not ing.liquid.available() %}
+                    <span class='unavailable'> - Unavailable</span>
+                    {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+                <input type="submit" value="Order Drink" class="order" id=" {{drink.id}} "/>
+                <button class="editOrder" id="editOrder" name="editOrder">Edit</button>
+            </form>
+        </div>
+        
+		
+	{% endif %}
+	{% endfor %}   
+	</div>
+    
+</body>
+</html>

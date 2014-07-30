@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>DrinkBot Inventory Page</title>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/static/inventory.css"/>
+  <link rel="stylesheet" href="/static/adminBar.css"/>
+  <script src="/resources/jquery-1.11.1.min.js"></script>
+  <script src="/static/inventory.js"></script>
+</head>
+<body>
+<h1>Inventory</h1>
+
+{% include "flash.html" ignore missing %}
+{% include "adminBar.html" %}
+<div id="inventory" class="floatLeft">
+    <form id="removeForm" name="removeForm" action="" method="POST">
+    <ul id="inventoryList">
+    {%for liquid in inventory %}
+        <div class="liquid">
+            <input type="checkbox" name="checkbox" value={{liquid.id}}/>
+            <li>{{liquid.liquid.name}}</li>
+        </div>
+    {% endfor %}
+    </ul>
+    </br>
+    <input type="submit" id="removeBtn" name="removeBtn" value="Remove"/>
+    </form>
+    <div id="addLiquid">
+    <form id="addLiquidForm" action="" method="POST">
+        </br>
+        <label for="add">Add New Liquid: </label><input type="text" id="add" name="add"/>
+        <input type="submit" id="addBtn" name="addBtn" value="Add"/>
+    </form>
+    </div>
+</div>
+</body>
+</html>
