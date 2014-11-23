@@ -5,19 +5,21 @@
 
 //regular expressions for getting ingredient amount and name
 amountRX =  /\d+\.?\d*/ ;
-liquidNameRX = /\d+\.?\d* % (\w+)/;
+liquidNameRX = /\b[a-zA-Z]+\b/g
 
 //flashes message
 function flash(msg)
 {
-
-$('.flashes').append('<li>' + msg + '</li>').fadeIn("slow").fadeOut("slow");
-
+//FIX multiple flashings: make li's hidden and flashable as opposed to entire ul?
+$newLi = $('<li>' + msg + '</li>') ;
+//$newLi.appendTo('.flashes').fadeIn("slow").fadeOut("slow");
+$('.flashes').append($newLi).fadeIn("800000").fadeOut("800000",function(){$newLi.remove();}) ;
 }
 
 //converts recipe elements to inputs
 function recipeToInput(recipeForm)
 {
+    //alert("recipeToInput start");
     if(recipeForm.find('input[name="amount"]').length > 0)
     {
         //alert(recipeForm.find('input[name="amount"]').length);
@@ -29,19 +31,59 @@ function recipeToInput(recipeForm)
     //alert($(recipeForm.find('li')[0]).text());
     var lis = recipeForm.find('li');
     var len = lis.length;
+    
+    var drink = recipeForm.parent().prev()
+    var drinkName = drink.text().trim();
+    if(drinkName.indexOf("-") >= 0)//trim off -requires hand adding/-unavailable
+        {
+            drinkName = drinkName.substr(0, drinkName.indexOf("-")).trim() ;
+        }
+    recipeForm.prepend($('<input class="drinkName" name="drinkName" value="' + drinkName + '" hidden />'));//hidden input for drinkName in form
+    drink.html($('<input class="drinkName" name="drinkName" value="' + drinkName + '" />'));//visible input for drinkName in h3
+    
     for (i = 0; i < len; i++){
         $item = $(lis[i]);//make jquery object
-        amount =  amountRX.exec($item.text());
-        name = liquidNameRX.exec($item.text())[1];
+        
+        var text = $item.text().trim().replace(/[\n\r\t]/g,"").replace(/\s\s+/g, " ") ;//removes extra whitespace
+        var amount =  amountRX.exec(text);//extract amount
+        //alert(text);
+        //alert(text.length);
+        //alert("66.66 % Vermouth - Requires hand adding".length);
+        //alert(text.indexOf("-"))
+        if(text.indexOf("-") >= 0)//trim off -requires hand adding/-unavailable
+        {
+            text = text.substr(0, text.indexOf("-")) ;
+        }
+        var name = text.match(liquidNameRX) ;//extract liquid name
+        var nameStr = "" ;
+        for(j = 0, len2 = name.length; j < len2; j++)
+        {
+            nameStr += name[j] + " ";
+        }
+        //alert(liquidNameRX.test("dog"));
+        //alert(liquidNameRX.test("dog cat"));
+        //alert(liquidNameRX.test("12"));
+        //alert(liquidNameRX.test("23 dog"));
         //alert(name);
         //alert($item.text().match(liquidNameRX)[1]);//get liquid Name
-        $newAmountInput = $('<input type="number" min="0" step="any" class="amount" name="amount" value="' + amount + '"></input>');
-        $newNameLabel = $('<input name="name" type="text" value="' + name + '" />');
+        $
+        $newAmountInput = $('<input type="number" min="0" step="any" class="amount" name="amount" value="' + amount + '"/>');
+        $newNameInput = $('<input name="name" type="text" value="' + nameStr + '" />');
         $item.html("");
         $item.append($newAmountInput);
-        $item.append($newNameLabel);
+        $item.append($newNameInput);
+        $removeBtn = $('<button class="removeInputs" name="removeInputs" value="Remove">Remove</button>');//allow to remove ingredient
+        $removeBtn.click(removeIngredient);
+        $item.append($removeBtn);
     }
+    //alert("recipeToInput end");
+}
+
+function removeIngredient(e)
+{
+    e.preventDefault();
     
+    $(e.target).parent().remove();//remove the ingredient inputs
 }
 
 //adds inputs for new ingredient to be added
@@ -49,21 +91,19 @@ function addIngredient(e){
 
     e.preventDefault();
     //alert("Add New Ingredient");
-    alert(amountRX.toString());
-    alert(amountRX.test(50.0));
+    
     $newAmountInput = $('<input type="number" class="amount" name="amount" placeholder="0.0"></input>');
     $newNameInput = $('<input type="text" class="name" name="name" placeholder="Name of Ingredient"></input>');
+    $removeBtn = $('<button class="removeInputs" name="removeInputs" value="Remove">Remove</button>');
+    $removeBtn.click(removeIngredient);
     $ul = $(e.target).parent().find('ul');
     $li = $('<li/>');
     $li.append($newAmountInput);
     $li.append($newNameInput);
+    $li.append($removeBtn);
     $ul.append($li);
 }
 
-//AJAX checks if logged in and does callback
-//args (dict of key-value pairs) : arguments to be passed to callback. ex: {key: "value", key2: 9"}
-//callback (function) : function to call upon response, should have arguments args(if you plan on passing it args)
-// and data(JSON with loggedIn set to true or false by server side code)
 
 
 //checks if user is currently logged in
@@ -108,22 +148,105 @@ function isLoggedInMin(callback)
 
 }
 
-function submitOrder(form){
-        $recipeForm = $(form);//find Form
-        recipeToInput($recipeForm);//converts recipe list to inputs
-        return true ;
+//checks if order/save form is valid, returns true if valid and form should be submitted, false if not valid and form shouldn't be submitted
+function validateForm(form)
+{
+    //alert("validateForm start");
+    $form = $(form) ;
+    
+    var valid = true ;
+    
+    $drink = $form.parent().prev().find('input[name="drinkName"]') ;//drinkName input
+    if($drink.val() == "")//check if empty
+    {
+        flash("Missing Drink Name", "error");
+        valid = false;
+    }
+    else
+    {
+        //give hidden drinkName input the value of the visible drinkName input
+        $form.find('input[name="drinkName"]').val($drink.val());
+    }
+    
+    if($form.attr("action") == $form.attr("deleteURL"))//check if action is delete
+    {
+        return valid;//can return here since delete only cares if drinkName exists
+    }
+    
+    if($form.find('li').length <= 0)
+    {
+        flash("No ingredients.", "error");
+        return false;
+    }
+    //alert($form.find('input[name="name"]').length);
+    var $nameInput = $form.find('input[name="name"]') ;
+    for(i = 0, len = $nameInput.length; i < len; i++ )
+    {
+        //alert($($nameInput[i]).val());
+        if($($nameInput[i]).val() == "")
+        {
+            flash("Missing Ingredient Name", "error");
+            valid = false;
+        }
+    }
+    
+    var $amountInput = $form.find('input[name="amount"]');
+    for(i = 0, len = $amountInput.length; i < len; i++)
+    {
+        if($($amountInput[i]).val() == "")
+        {
+            flash("Missing Ingredient Amount", "error");
+            valid = false;
+        }
+    }
+    
+    
+    //alert("validateForm end");
+    return valid ;
+
+}
+
+function submitOrder(e){
+        //alert("submitOrder start");
+        $form = $(e.target).parent() ;
+        $form.attr("action",$form.attr("orderURL"));
+        
+        recipeToInput($form);//converts recipe list to inputs
+        //alert("submitOrder end");
+        //return true ;
+}
+
+function saveRecipe(e)
+{
+
+    //alert("Saved but not really!") ;
+    $form = $(e.target).parent() ;
+    
+    $form.attr("action",$form.attr("saveURL"));
+   
+}
+
+function deleteDrink(e)
+{
+
+    //alert("Saved but not really!") ;
+    $form = $(e.target).parent() ;
+    
+    $form.attr("action",$form.attr("deleteURL"));
+    recipeToInput($form);//converts recipe list to inputs and more importantly creates drinkName input
 }
 
 $(document).ready(function(){
 
+    //disable keyboard navigation of accordion since it doesn't play well with inputs
+    $.ui.accordion.prototype._keydown = function(e){return;};
+    
 	$('#drinks').accordion();
-	$('button.order').click(function(e){
-		e.preventDefault();
-        alert('You ordered drink: ' + $(e.target).attr('id')) ;
-	});
+	$('input.order').click(submitOrder);
+    $('button#deleteDrink').click(deleteDrink);
     $('button.editOrder').click(function(e){
         e.preventDefault();
-        $recipeForm = $(e.target).parent().parent();//find Form
+        $recipeForm = $(e.target).parent();//find Form
         recipeToInput($recipeForm);//converts recipe list to inputs
         //add button for adding additional ingredients
         $addIngredientBtn = $('<button class="addIngredient" name="addIngredient">Add New Ingredient</button>');
@@ -132,13 +255,14 @@ $(document).ready(function(){
         $(e.target).remove();
         isLoggedInMin( function(data){
             if(data.loggedIn){
-                $saveButton = $('<button id="saveEdit" name="saveEdit" class="saveEdit">Save</button>');
-                $saveButton.click(function(){flash("Saved! but not really");});
+                $saveButton = $('<input type="submit" id="saveEdit" name="saveEdit" class="saveEdit" value="Save" />');
+                $saveButton.click(saveRecipe);
                 $recipeForm.append($saveButton);
+                //alert($recipeForm.attr("class"));
             }
         });
     });
     
     
-    $('.flashes').fadeIn("slow").fadeOut("slow");
+    $('.flashes').fadeIn("800000").fadeOut("800000");
 });

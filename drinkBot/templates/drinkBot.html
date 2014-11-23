@@ -24,20 +24,26 @@
 	{% for drink in drinks %}
 	{% if not availableOnly or drink.available() %} 
 		
-        <h3 class="drink">{{drink.name}} {% if not drink.available() %} <span class='unavailable'> - Unavailable</span>{% endif %} </h3>
+        <h3 class="drink">{{drink.name}} 
+        {% if not drink.available() %} <span class='unavailable'> - Unavailable</span>
+        {% elif not drink.all_in_bot() %} <span class='handAdd'> - Requires hand adding</span>
+        {% endif %} </h3>
         <div class="ingredients">
-            <form name="orderForm" action="{{url_for("order")}}" method="POST" class="orderForm" onSubmit="submitOrder(this)">
+            <form name="orderForm" orderURL="{{url_for("order")}}" saveURL="{{url_for("confirm_recipe")}}" deleteURL="{{url_for("delete_recipe")}}" action="{{url_for("order")}}" method="POST" class="orderForm" onSubmit="return validateForm(this);">
                 <ul>
                 {% for ing in drink.mixes	%}
-                    <li>{{ing.amount}} % {{ing.liquid.name}} 
+                    <li>{{ing.amount}} % {{ing.liquid.name}}
                     {% if not ing.liquid.available() %}
                     <span class='unavailable'> - Unavailable</span>
+                    {% elif not ing.liquid.in_bot() %}
+                    <span class='handAdd'> - Requires hand adding</span>
                     {% endif %}
                     </li>
                 {% endfor %}
                 </ul>
                 <input type="submit" value="Order Drink" class="order" id=" {{drink.id}} "/>
                 <button class="editOrder" id="editOrder" name="editOrder">Edit</button>
+                <button class="deleteDrink" id="deleteDrink" name="deleteDrink">Delete</button>
             </form>
         </div>
         

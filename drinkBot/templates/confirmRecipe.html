@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Confirm Recipe</title>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="/static/confirmRecipe.css"/>
+  <script src="/resources/jquery-1.11.1.min.js"></script>
+  <script src="/resources/jquery-ui-1.10.4.custom.min.js"></script>
+  <script>$(document).ready(function(){$('#cancel').click(function(e){window.location = "{{url_for('drinkBot')}}";});})</script>
+  
+</head>
+<body>
+	<h1>Confirm Recipe</h1>
+    {% include "flash.html" ignore missing %}
+    <h3 class="drink">{{drinkName}}</h3>
+    <div class="ingredients">
+        <form name="saveForm" action="{{url_for('save_recipe')}}" method="POST" class="saveForm" >
+            <input type="text" value="{{drinkName}}" name="drinkName" id="drinkName" class="drinkName" hidden />
+            <ul>
+                {% for amount, name in recipe %}
+                 <li>{{amount}} % {{name}}</li>
+                 <input type="number" min="0" step="any" class="amount" name="amount" value="{{amount}}" hidden />
+                 <input name="name" type="text" value="{{name}}" hidden />
+                {% endfor %}
+                </ul>
+                <input type="submit" value="Confirm" class="confirm" id="confirm"/>
+                
+            </form>
+            <button class="cancel" id="cancel" name="cancel">Cancel</button>
+        </div>
+</body>
+</html>

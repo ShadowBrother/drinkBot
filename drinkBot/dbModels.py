@@ -17,12 +17,12 @@ class Inventory(db.Model):
     #__table_args__ = {'autoload': True, 'autoload_with': engine}
     id = db.Column(db.Integer, primary_key=True)
     liquid_id = db.Column(db.Integer, db.ForeignKey('Liquids.id'), unique=True)
-    
+    slot = db.Column(db.Integer, unique=True)#slot in robot drink is in (one slot for each solenoid)
 
 
-    def __init__(self, liquid):
+    def __init__(self, liquid, slot=None):
         self.liquid = liquid
-
+        self.slot = slot 
     def __repr__(self):
         return '<Inventory %r>' % self.liquid.name
 
@@ -35,12 +35,19 @@ class Liquid(db.Model):
     name = db.Column(db.String(80), unique=True)
     inventory = db.relationship('Inventory', backref="liquid", primaryjoin = (Inventory.liquid_id == id))
     
-    def available(self):
+    def available(self):#True if Liquid is in Inventory, else False
         if(self.inventory):
             return True
         else:
             return False
+            
+    def in_bot(self):#True if Liquid is in Inventory and assigned a slot in robot
         
+        if( self.available() and self.inventory[0].slot is not None):
+            return True
+        else:
+            return False
+
     def __init__(self, name):
         self.name = name
 
@@ -58,13 +65,19 @@ class Drink(db.Model):
     price = db.Column(db.Float)
     
 
-    def available(self):
+    def available(self):#returns True if all ingredients required are in Inventory
         for ing in self.mixes:
             if (not ing.liquid.available()):
                 return False
         return True
+    
+    def all_in_bot(self):#returns True if all ingredients required are in robot
+        for ing in self.mixes:
+            if(not ing.liquid.in_bot()):
+                return False
+        return True
 
-    def __init__(self, name, price):
+    def __init__(self, name, price= 0.0):
 
         self.name = name
         self.price = price
@@ -78,7 +91,7 @@ class Mix(db.Model):
     #__table__ = Base.metadata.tables['Mix']
     id = db.Column(db.Integer, primary_key=True)
     drink_id = db.Column('drink_id', db.Integer, db.ForeignKey('Drinks.id'))
-    drink = db.relationship('Drink', backref=db.backref('mixes', lazy='dynamic'), primaryjoin = (Drink.id == drink_id))
+    drink = db.relationship('Drink', backref=db.backref('mixes', lazy='dynamic', cascade='all, delete'), primaryjoin = (Drink.id == drink_id))
     liquid_id = db.Column(db.Integer, db.ForeignKey('Liquids.id'))
     liquid = db.relationship('Liquid', backref=db.backref('mixes', lazy='dynamic'), primaryjoin = (Liquid.id == liquid_id))
     amount = db.Column(db.Float)#percentage
