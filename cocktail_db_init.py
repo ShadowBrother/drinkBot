@@ -2,6 +2,7 @@
 #creates tables for cocktails.db
 #Jesse Hoyt - jesselhoyt@gmail.com
 
+#update - 7/10/14 - added foreign keys to mix table
 import sqlite3 as lite
 import sys
 
@@ -63,7 +64,7 @@ with con:
         print inv_id
 
     #create Inventory table and insert values
-    cur.execute("CREATE TABLE Inventory(id INTEGER PRIMARY KEY, liquid_id INTEGER)")
+    cur.execute("CREATE TABLE Inventory(id INTEGER PRIMARY KEY, liquid_id INTEGER, FOREIGN KEY(liquid_id) REFERENCES liquid(id))")
     cur.executemany("INSERT INTO Inventory(liquid_id) VALUES(?)", inventory_ids)
     con.commit()
 
@@ -75,7 +76,7 @@ with con:
     
     
     #create Mix table and insert values
-    cur.execute("CREATE TABLE Mix(id INTEGER PRIMARY KEY, drink_id INTEGER, liquid_id INTEGER, amount INTEGER)")
+    cur.execute("CREATE TABLE Mix(id INTEGER PRIMARY KEY, drink_id INTEGER, liquid_id INTEGER, amount INTEGER, FOREIGN KEY(drink_id) REFERENCES drink(id), FOREIGN KEY(liquid_id) REFERENCES liquid(id))")
 
     #loop through mix list and look up ids in appropriate tables
     for i in mix:

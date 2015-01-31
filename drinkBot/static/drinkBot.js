@@ -3,6 +3,9 @@
 
 //requires jquery
 
+
+
+
 //regular expressions for getting ingredient amount and name
 amountRX =  /\d+\.?\d*/ ;
 liquidNameRX = /\b[a-zA-Z]+\b/g
@@ -56,7 +59,7 @@ function recipeToInput(recipeForm)
         }
         var name = text.match(liquidNameRX) ;//extract liquid name
         var nameStr = "" ;
-        for(j = 0, len2 = name.length; j < len2; j++)
+        for(j = 1, len2 = name.length; j < len2; j++)//j = 1 to ignore "oz"
         {
             nameStr += name[j] + " ";
         }
@@ -66,11 +69,22 @@ function recipeToInput(recipeForm)
         //alert(liquidNameRX.test("23 dog"));
         //alert(name);
         //alert($item.text().match(liquidNameRX)[1]);//get liquid Name
-        $
-        $newAmountInput = $('<input type="number" min="0" step="any" class="amount" name="amount" value="' + amount + '"/>');
-        $newNameInput = $('<input name="name" type="text" value="' + nameStr + '" />');
+        
+        $newAmountInput = $('<input type="number" min="0" step="any" class="amount oz" name="amountOz" value="' + amount + '" />'); //'" onchange="updateTotal($(this).parent().parent().parent())"/>');
+        $newAmountPercentInput = $('<input type="number" min="0" step="any" class="amount percent" name="amountPercent" value="' + ozToPercent(parseFloat($recipeForm.find(".glassSize").val()), amount) + '" />');
+		alert($recipeForm.find(".glassSize").val());
+		
+		//add update handlers to amount inputs
+		$newAmountInput.change(updatePercent);
+		$newAmountPercentInput.change(updateOz);
+		
+		//glassSize probably needs a separate, default onChange handler for when it's not in editing mode
+		//to change the displayed recipe. Would require turning on/off the 2 handlers.
+		$recipeForm.find(".glassSize").change(updatePercent) ;//if glassSize changes, the percentages need to change.
+		$newNameInput = $('<input name="name" type="text" value="' + nameStr + '" />');
         $item.html("");
         $item.append($newAmountInput);
+		$item.append($newAmountPercentInput);
         $item.append($newNameInput);
         $removeBtn = $('<button class="removeInputs" name="removeInputs" value="Remove">Remove</button>');//allow to remove ingredient
         $removeBtn.click(removeIngredient);
@@ -236,23 +250,101 @@ function deleteDrink(e)
     recipeToInput($form);//converts recipe list to inputs and more importantly creates drinkName input
 }
 
-$(document).ready(function(){
 
-    //disable keyboard navigation of accordion since it doesn't play well with inputs
-    $.ui.accordion.prototype._keydown = function(e){return;};
-    
-	$('#drinks').accordion();
-	$('input.order').click(submitOrder);
-    $('button#deleteDrink').click(deleteDrink);
-    $('button.editOrder').click(function(e){
+//totals amount of all ingredients
+//returns float of total
+//recipeForm (jQuery object) : Form containing recipe elements
+function total($recipeForm)
+{
+
+	var total = 0.0 ;
+	var $lis = $recipeForm.find('li')
+	for(i = 0, len = $lis.length; i < len ; i++)
+	{
+		total += parseFloat($($lis[i]).find('.amount.percent').val()) ;
+	}
+	return total ;
+}
+
+//update total when amount input changed
+function updateTotal(e){
+
+	var $recipeForm = $(e.target).parent().parent().parent() ;
+	var totl = total($recipeForm) ;
+	$recipeForm.find('.total').val(totl) ;
+	if((totl > 100) || (totl <= 0))//if total is out of range error message
+	{
+	
+		$recipeForm.find('.totalError').html("Where'd you learn to math?") ;
+	
+	}
+	else//if no error, clear any error message that might be there
+	{
+		$recipeForm.find('.totalError').html("") ;
+	}
+}
+
+//update percent input when oz is changed
+function updatePercent(e)
+{
+	var $amountInput = $(e.target) ;
+	var $recipeForm = $amountInput.parent().parent().parent() ;
+	$percentInput = $amountInput.siblings(".percent") ;
+	newPercentValue = ozToPercent(parseFloat($recipeForm.find(".glassSize").val()), parseFloat($amountInput.val())) ;//calculate new percentage
+	if(parseFloat($percentInput.val()) != newPercentValue)//avoid infinite loop of updating percent and oz inputs
+		{
+		$percentInput.val(newPercentValue) ;//update percent value
+		}
+	updateTotal(e) ;
+}
+
+//update oz input when amount is changed
+function updateOz(e)
+{
+	var $percentInput = $(e.target) ;
+	var $recipeForm = $percentInput.parent().parent().parent() ;
+	$ozInput = $percentInput.siblings(".oz") ;
+	newOzValue = percentToOz(parseFloat($recipeForm.find(".glassSize").val()), parseFloat($percentInput.val()))  ;//calculate new percentage
+	if(parseFloat($ozInput.val()) != newOzValue)//avoid infinite loop of updating percent and oz inputs
+		{
+		$ozInput.val(newOzValue) ;//update percent value
+		}
+	updateTotal(e) ;
+	
+
+}
+
+function ozToPercent(glassSizeOz, oz){
+
+	return oz / glassSizeOz * 100 ;
+}
+
+function percentToOz(glassSizeOz, percent){
+
+	return percent / 100 * glassSizeOz ;
+
+}
+//editOrder click handler, converts recipe to allow editing
+function editOrder(e)
+{
         e.preventDefault();
         $recipeForm = $(e.target).parent();//find Form
         recipeToInput($recipeForm);//converts recipe list to inputs
+		//total percent so can't go over
+		var totl = total($recipeForm) ;
+		$total = $('<input type="number" min="0" max="100" name="total" class="total" value="' + totl + '" readonly />');
+		$totalError = $('<div class="totalErrorDiv"><p name="totalError" class="totalError error"></p></div>');
+		
+		
         //add button for adding additional ingredients
         $addIngredientBtn = $('<button class="addIngredient" name="addIngredient">Add New Ingredient</button>');
         $addIngredientBtn.click(addIngredient);
+		//append addIngredientBtn, TotalError, and total after ul
         $recipeForm.find('ul').after($addIngredientBtn);
-        $(e.target).remove();
+        $recipeForm.find('ul').after($totalError);
+		$recipeForm.find('ul').after($total);
+		
+		$(e.target).remove();
         isLoggedInMin( function(data){
             if(data.loggedIn){
                 $saveButton = $('<input type="submit" id="saveEdit" name="saveEdit" class="saveEdit" value="Save" />');
@@ -261,7 +353,17 @@ $(document).ready(function(){
                 //alert($recipeForm.attr("class"));
             }
         });
-    });
+}
+
+$(document).ready(function(){
+
+    //disable keyboard navigation of accordion since it doesn't play well with inputs
+    $.ui.accordion.prototype._keydown = function(e){return;};
+    
+	$('#drinks').accordion();
+	$('input.order').click(submitOrder);
+    $('button#deleteDrink').click(deleteDrink);
+    $('button.editOrder').click(editOrder);
     
     
     $('.flashes').fadeIn("800000").fadeOut("800000");

@@ -9,7 +9,7 @@
     float:right;
 }
 
-.unavailable 
+.error , .unavailable 
 {
 	color : red
 }

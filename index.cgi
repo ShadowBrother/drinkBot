@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 
 import sqlite3 as lite
 import db_tools
@@ -8,7 +8,7 @@ con = lite.connect('cocktails.db')
 with con:
 	cur = con.cursor()
 
-	print "Content-Type: text/html"
+	print "Content-Type: text/html\r\r"
 	print
 
 	print """

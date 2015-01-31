@@ -32,7 +32,7 @@
             <form name="orderForm" orderURL="{{url_for("order")}}" saveURL="{{url_for("confirm_recipe")}}" deleteURL="{{url_for("delete_recipe")}}" action="{{url_for("order")}}" method="POST" class="orderForm" onSubmit="return validateForm(this);">
                 <ul>
                 {% for ing in drink.mixes	%}
-                    <li>{{ing.amount}} % {{ing.liquid.name}}
+                    <li>{{ing.amount * 10 / 100}} oz {{ing.liquid.name}}
                     {% if not ing.liquid.available() %}
                     <span class='unavailable'> - Unavailable</span>
                     {% elif not ing.liquid.in_bot() %}
@@ -41,6 +41,11 @@
                     </li>
                 {% endfor %}
                 </ul>
+				<label for="glassSize">Glass Size</label>
+				<select name="glassSize" class="glassSize">
+					<option value="10" selected>Normal</option>
+					<option value="20">Double</option>
+				</select>
                 <input type="submit" value="Order Drink" class="order" id=" {{drink.id}} "/>
                 <button class="editOrder" id="editOrder" name="editOrder">Edit</button>
                 <button class="deleteDrink" id="deleteDrink" name="deleteDrink">Delete</button>
