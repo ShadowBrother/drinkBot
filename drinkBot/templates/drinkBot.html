@@ -29,7 +29,7 @@
         {% elif not drink.all_in_bot() %} <span class='handAdd'> - Requires hand adding</span>
         {% endif %} </h3>
         <div class="ingredients">
-            <form name="orderForm" orderURL="{{url_for("order")}}" saveURL="{{url_for("confirm_recipe")}}" deleteURL="{{url_for("delete_recipe")}}" action="{{url_for("order")}}" method="POST" class="orderForm" onSubmit="return validateForm(this);">
+            <form name="orderForm" orderURL="{{g.url_for("order")}}" saveURL="{{g.url_for("confirm_recipe")}}" deleteURL="{{g.url_for("delete_recipe")}}" action="{{g.url_for("order")}}" method="POST" class="orderForm" onSubmit="return validateForm(this);">
                 <ul>
                 {% for ing in drink.mixes	%}
                     <li>{{ing.amount * 10 / 100}} oz {{ing.liquid.name}}

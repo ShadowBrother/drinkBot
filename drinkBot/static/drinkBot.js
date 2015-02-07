@@ -20,10 +20,10 @@ $('.flashes').append($newLi).fadeIn("800000").fadeOut("800000",function(){$newLi
 }
 
 //converts recipe elements to inputs
-function recipeToInput(recipeForm)
+function recipeToInput($recipeForm)
 {
     //alert("recipeToInput start");
-    if(recipeForm.find('input[name="amount"]').length > 0)
+    if($recipeForm.find('input[name="amountOz"]').length > 0)
     {
         //alert(recipeForm.find('input[name="amount"]').length);
         //alert("already input") ;
@@ -32,16 +32,16 @@ function recipeToInput(recipeForm)
     //alert(recipeForm.find('input'[name="amount"]).length);
     
     //alert($(recipeForm.find('li')[0]).text());
-    var lis = recipeForm.find('li');
+    var lis = $recipeForm.find('li');
     var len = lis.length;
     
-    var drink = recipeForm.parent().prev()
+    var drink = $recipeForm.parent().prev()
     var drinkName = drink.text().trim();
     if(drinkName.indexOf("-") >= 0)//trim off -requires hand adding/-unavailable
         {
             drinkName = drinkName.substr(0, drinkName.indexOf("-")).trim() ;
         }
-    recipeForm.prepend($('<input class="drinkName" name="drinkName" value="' + drinkName + '" hidden />'));//hidden input for drinkName in form
+    $recipeForm.prepend($('<input class="drinkName" name="drinkName" value="' + drinkName + '" hidden />'));//hidden input for drinkName in form
     drink.html($('<input class="drinkName" name="drinkName" value="' + drinkName + '" />'));//visible input for drinkName in h3
     
     for (i = 0; i < len; i++){
@@ -72,25 +72,39 @@ function recipeToInput(recipeForm)
         
         $newAmountInput = $('<input type="number" min="0" step="any" class="amount oz" name="amountOz" value="' + amount + '" />'); //'" onchange="updateTotal($(this).parent().parent().parent())"/>');
         $newAmountPercentInput = $('<input type="number" min="0" step="any" class="amount percent" name="amountPercent" value="' + ozToPercent(parseFloat($recipeForm.find(".glassSize").val()), amount) + '" />');
-		alert($recipeForm.find(".glassSize").val());
+		//alert($recipeForm.find(".glassSize").val());
 		
-		//add update handlers to amount inputs
-		$newAmountInput.change(updatePercent);
-		$newAmountPercentInput.change(updateOz);
+		
 		
 		//glassSize probably needs a separate, default onChange handler for when it's not in editing mode
 		//to change the displayed recipe. Would require turning on/off the 2 handlers.
 		$recipeForm.find(".glassSize").change(updatePercent) ;//if glassSize changes, the percentages need to change.
 		$newNameInput = $('<input name="name" type="text" value="' + nameStr + '" />');
-        $item.html("");
+		
+		//add update handlers to amount inputs
+		$newAmountInput.change(updatePercent).keypress(disableEnter);
+		$newAmountPercentInput.change(updateOz).keypress(disableEnter);
+		$newNameInput.keypress(disableEnter);
+        
+		$item.html("");
         $item.append($newAmountInput);
+		$item.append($('<span>oz</span>'));
 		$item.append($newAmountPercentInput);
+		$item.append($('<span>%</span>'));
         $item.append($newNameInput);
         $removeBtn = $('<button class="removeInputs" name="removeInputs" value="Remove">Remove</button>');//allow to remove ingredient
         $removeBtn.click(removeIngredient);
         $item.append($removeBtn);
     }
     //alert("recipeToInput end");
+}
+
+//disableEnter in inputs to stop from accidentally deleting input
+function disableEnter(e)
+{
+
+	if (e.keyCode == 10 || e.keyCode == 13) 
+        e.preventDefault();
 }
 
 function removeIngredient(e)
@@ -106,13 +120,23 @@ function addIngredient(e){
     e.preventDefault();
     //alert("Add New Ingredient");
     
-    $newAmountInput = $('<input type="number" class="amount" name="amount" placeholder="0.0"></input>');
+	//add inputs for new ingredient
+    $newAmountInput = $('<input type="number" class="amount oz" name="amountOz" placeholder="0.0"></input>');
+	$newAmountPercentInput = $('<input type="number" class="amount percent" name="amountPercent" placeholder="0.0"></input>');
     $newNameInput = $('<input type="text" class="name" name="name" placeholder="Name of Ingredient"></input>');
     $removeBtn = $('<button class="removeInputs" name="removeInputs" value="Remove">Remove</button>');
-    $removeBtn.click(removeIngredient);
-    $ul = $(e.target).parent().find('ul');
+    //add handlers to buttons/inputs
+	$removeBtn.click(removeIngredient);
+	$newAmountInput.change(updatePercent).keypress(disableEnter);
+	$newAmountPercentInput.change(updateOz).keypress(disableEnter);
+	$newNameInput.keypress(disableEnter);
+	
+    //find ingredient list
+	$ul = $(e.target).parent().find('ul');
     $li = $('<li/>');
+	//append ingredient inputs/buttons to ingredient list
     $li.append($newAmountInput);
+	$li.append($newAmountPercentInput);
     $li.append($newNameInput);
     $li.append($removeBtn);
     $ul.append($li);
@@ -204,7 +228,7 @@ function validateForm(form)
         }
     }
     
-    var $amountInput = $form.find('input[name="amount"]');
+    var $amountInput = $form.find('input[name="amountOz"]');
     for(i = 0, len = $amountInput.length; i < len; i++)
     {
         if($($amountInput[i]).val() == "")
@@ -334,7 +358,7 @@ function editOrder(e)
 		var totl = total($recipeForm) ;
 		$total = $('<input type="number" min="0" max="100" name="total" class="total" value="' + totl + '" readonly />');
 		$totalError = $('<div class="totalErrorDiv"><p name="totalError" class="totalError error"></p></div>');
-		
+		$total.keypress(disableEnter);
 		
         //add button for adding additional ingredients
         $addIngredientBtn = $('<button class="addIngredient" name="addIngredient">Add New Ingredient</button>');

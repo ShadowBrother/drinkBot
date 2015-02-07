@@ -19,7 +19,7 @@
     {%for liquid in inventory %}
         <div class="liquid">
             <input type="checkbox" name="checkbox" value={{liquid.id}}/>
-            <li>{{liquid.liquid.name}}</li>
+            <li>{{liquid.liquid.name}} {% if liquid.slot is not none %}  {{liquid.slot}} {% endif %}</li>
         </div>
     {% endfor %}
     </ul>

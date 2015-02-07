@@ -1,9 +1,12 @@
-from __init__ import app, login_manager
-from flask import render_template, request, flash, session, redirect, url_for, g, jsonify
+from drinkBot import app, login_manager
+from flask import render_template, request, flash, session, redirect, g, jsonify#,url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import login_required, login_user, logout_user, current_user
 from dbModels import Drink, Liquid, Mix, Inventory, db, engine
 from userModel import User
+from drinkBot.url_forFix import url_for
+
+
 
 #login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -75,15 +78,16 @@ def inventory():
                         
                     db.session.add(newInv)
                     db.session.commit()
-                    
-    return render_template("inventory.html", inventory = Inventory.query.all())
+    #sort inventory so items in drinkBot(have slot number) come first, then followed by those not in bot(slot is None, compared as 100)
+    sortedInventory = sorted(Inventory.query.all(), key = lambda x: 100 if x.slot is None else x.slot)               
+    return render_template("inventory.html", inventory = sortedInventory)
 
 @app.route('/db/_order', methods=['POST'])
 def order():
-    if(request.form.get("amount")):
+    if(request.form.get("amountOz")):
         order=[]
                 
-        for amount, name in zip(request.form.getlist("amount"), request.form.getlist("name")):
+        for amount, name in zip(request.form.getlist("amountOz"), request.form.getlist("name")):
             #flash(amount + "  " + name)
             order.append(amount + "  " + name + "\n")
         return "Order: " + "".join(order)
@@ -96,7 +100,7 @@ def order():
 @app.route('/db/_confirmRecipe', methods=['POST'])
 @login_required
 def confirm_recipe():
-    if(request.form.get("amount") and request.form.get("name")):
+    if(request.form.get("amountPercent") and request.form.get("name")):
         order=[]
         #TODO:
             
@@ -107,7 +111,7 @@ def confirm_recipe():
         #    if yes, update row, else insert
         #check if any liquids in Mix for drink are missing in new recipe, need to delete those from Mix
         
-        recipe = zip(request.form.getlist("amount"), request.form.getlist("name")) ;
+        recipe = zip(request.form.getlist("amountPercent"), request.form.getlist("name")) ;
         if(recipe):
             
             drinkName = request.form.get("drinkName").strip()
@@ -251,10 +255,11 @@ def delete_recipe():
 def load_user(id):
     return User.query.get(int(id))
 
+#set gobal values before each request
 @app.before_request
 def before_request():
-    g.user = current_user
-
+    g.user = current_user#current user, for logins
+    g.url_for = url_for#so templates can access fixed url_for
     
 @app.route('/db/login', methods=['GET', 'POST'])
 def login():
@@ -283,3 +288,5 @@ def logout():
 def isLoggedIn():
     
     return jsonify(loggedIn=g.user.is_authenticated())
+	
+

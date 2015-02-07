@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="/static/confirmRecipe.css"/>
   <script src="/resources/jquery-1.11.1.min.js"></script>
   <script src="/resources/jquery-ui-1.10.4.custom.min.js"></script>
-  <script>$(document).ready(function(){$('#cancel').click(function(e){window.location = "{{url_for('drinkBot')}}";});})</script>
+  <script>$(document).ready(function(){$('#cancel').click(function(e){window.location = "{{g.url_for('drinkBot')}}";});})</script>
   
 </head>
 <body>
@@ -14,7 +14,7 @@
     {% include "flash.html" ignore missing %}
     <h3 class="drink">{{drinkName}}</h3>
     <div class="ingredients">
-        <form name="saveForm" action="{{url_for('save_recipe')}}" method="POST" class="saveForm" >
+        <form name="saveForm" action="{{g.url_for('save_recipe')}}" method="POST" class="saveForm" >
             <input type="text" value="{{drinkName}}" name="drinkName" id="drinkName" class="drinkName" hidden />
             <ul>
                 {% for amount, name in recipe %}

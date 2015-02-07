@@ -5,7 +5,7 @@ import datetime
 
 db = SQLAlchemy(app)
 
-engine = db.create_engine('sqlite:////var/www/drinkBot/drinkBot/users.db', convert_unicode=True, echo=False)
+engine = db.create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True, echo=False)
 Base = db.make_declarative_base()
 
 class User(db.Model, UserMixin):

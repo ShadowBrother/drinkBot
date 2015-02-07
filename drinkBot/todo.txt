@@ -1,0 +1,7 @@
+TODO:
+-revamp inventory page
+	X show slot number
+	X organize list
+	-make draggable
+-figure out queue for order
+-convert human readable recipe to drinkbot usable format
