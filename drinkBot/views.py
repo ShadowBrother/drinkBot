@@ -1,15 +1,18 @@
 from drinkBot import app, login_manager
-from flask import render_template, request, flash, session, redirect, g, jsonify#,url_for
+from flask import render_template, request, flash, session, redirect, g, jsonify, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import login_required, login_user, logout_user, current_user
+from flask.ext.rq import job, get_queue, get_worker
 from dbModels import Drink, Liquid, Mix, Inventory, db, engine
 from userModel import User
-from drinkBot.url_forFix import url_for
+from time import gmtime, strftime
+
+#from drinkBot.url_forFix import url_for
 
 
 
 #login_manager.init_app(app)
-login_manager.login_view = 'login'
+#login_manager.login_view = 'login'
 
 @app.route('/')
 def hello_world():
@@ -86,12 +89,15 @@ def inventory():
 def order():
     if(request.form.get("amountOz")):
         order=[]
-                
-        for amount, name in zip(request.form.getlist("amountOz"), request.form.getlist("name")):
+        orderTuples = zip(request.form.getlist("amountOz"), request.form.getlist("name"))       
+        for amount, name in orderTuples:
             #flash(amount + "  " + name)
             order.append(amount + "  " + name + "\n")
+        #get_worker().work(True)
+        q = get_queue().enqueue(pourDrink, orderTuples)
         return "Order: " + "".join(order)
-            
+        
+		
     else:
         flash("No amount specified.")
     return redirect(url_for('drinkBot'))
@@ -251,42 +257,59 @@ def delete_recipe():
         flash("No drink name entered.", "error")
     return redirect(url_for('drinkBot'))
 #login routes
-@login_manager.user_loader
-def load_user(id):
-    return User.query.get(int(id))
+# @login_manager.user_loader
+# def load_user(id):
+    # return User.query.get(int(id))
 
-#set gobal values before each request
+#set global values before each request
 @app.before_request
 def before_request():
     g.user = current_user#current user, for logins
     g.url_for = url_for#so templates can access fixed url_for
     
-@app.route('/db/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'GET':
-        return render_template('login.html')
-    username = request.form.get('username')
-    password = request.form.get('password')
-    #return str(username) + "\n" + str(password)
-    if password == "" or username == "":
-        flash("Enter username and password", "error")
-        return redirect(url_for('login'))
-    registered_user = User.query.filter_by(username=username,password=password).first()
-    if registered_user is None:
-        flash('Username or Password is invalid', 'error')
-        return redirect(url_for('login'))
-    login_user(registered_user)
-    flash('Logged in successfully')
-    return redirect(request.args.get('next') or url_for('drinkBot'))
+# @app.route('/db/login', methods=['GET', 'POST'])
+# def login():
+    # if request.method == 'GET':
+        # return render_template('login.html')
+    # username = request.form.get('username')
+    # password = request.form.get('password')
+    # #return str(username) + "\n" + str(password)
+    # if password == "" or username == "":
+        # flash("Enter username and password", "error")
+        # return redirect(url_for('login'))
+    # registered_user = User.query.filter_by(username=username,password=password).first()
+    # if registered_user is None:
+        # flash('Username or Password is invalid', 'error')
+        # return redirect(url_for('login'))
+    # login_user(registered_user)
+    # flash('Logged in successfully')
+    # return redirect(request.args.get('next') or url_for('drinkBot'))
 
-@app.route('/db/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('drinkBot'))
+# @app.route('/db/logout')
+# def logout():
+    # logout_user()
+    # return redirect(url_for('drinkBot'))
     
-@app.route('/db/_isLoggedIn')
-def isLoggedIn():
+# @app.route('/db/_isLoggedIn')
+# def isLoggedIn():
     
-    return jsonify(loggedIn=g.user.is_authenticated())
+    # return jsonify(loggedIn=g.user.is_authenticated())
 	
+#appends order to file
+#order is list of amount, drinkName tuples
+@job
+def pourDrink(order):
 
+	orderToStr = []
+	for amount, name in order:
+		#get liquid from db
+		liq = db.session.query(Liquid).filter_by(name=name.strip()).first()
+		if liq is not None and liq.in_bot():
+			orderToStr.append("POUR slot ")
+			orderToStr.append(str(liq.inventory[0].slot))
+		else:
+			orderToStr.append("HANDADD " + name)
+		orderToStr.append(" " + amount + " oz\n")
+	f = open('/var/www/drinkBot/drinkBot/pourDrink.txt', 'a')
+	f.write(strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()) + "\n" + "".join([str(i) for i in orderToStr]))
+	f.close()
