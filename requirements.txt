@@ -1,0 +1,6 @@
+Flask>=0.10.1
+Flask-Login>=0.2.11
+Flask-SQLAlchemy>=2.0
+redis>=2.10.3
+rq=>0.5.0
+flask-rq=>0.2

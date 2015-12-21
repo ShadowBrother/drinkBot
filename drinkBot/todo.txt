@@ -3,5 +3,9 @@ TODO:
 	X show slot number
 	X organize list
 	-make draggable
--figure out queue for order
+X figure out queue for order
 -convert human readable recipe to drinkbot usable format
+-Move to Blueprints
+	X Move login to Blueprint
+	- Move views to Blueprint
+-After order, should show recipes in non-edit mode
