@@ -293,7 +293,7 @@ function total($recipeForm)
 //update total when amount input changed
 function updateTotal(e){
 
-	var $recipeForm = $(e.target).parent().parent().parent() ;
+	var $recipeForm = $(e).parent().parent().parent() ;
 	var totl = total($recipeForm) ;
 	$recipeForm.find('.total').val(totl) ;
 	if((totl > 100) || (totl <= 0))//if total is out of range error message
@@ -325,7 +325,10 @@ function updatePercent(e)
 //update oz input when amount is changed
 function updateOz(e)
 {
-	var $percentInput = $(e.target) ;
+	//alert("updateOz");
+	var $percentInput = $(this);//$(e.target) ;
+	//alert($percentInput);
+	//alert(parseFloat($percentInput.val()));
 	var $recipeForm = $percentInput.parent().parent().parent() ;
 	$ozInput = $percentInput.siblings(".oz") ;
 	newOzValue = percentToOz(parseFloat($recipeForm.find(".glassSize").val()), parseFloat($percentInput.val()))  ;//calculate new percentage
@@ -333,7 +336,7 @@ function updateOz(e)
 		{
 		$ozInput.val(newOzValue) ;//update percent value
 		}
-	updateTotal(e) ;
+	updateTotal(this) ;
 	
 
 }
@@ -348,6 +351,37 @@ function percentToOz(glassSizeOz, percent){
 	return percent / 100 * glassSizeOz ;
 
 }
+
+//glassSizeUpdate update recipe oz when glassSize is changed
+function glassSizeUpdate(e)
+{
+	//alert($(this).val());
+	$recipeForm = $(e.target).parent();//find Form
+	//alert($recipeForm.find('.oz').length);
+	if($recipeForm.find('.oz').length > 0)//in edit mode
+	{	
+		alert("Edit mode");
+		$recipeForm.find('.percent').each(updateOz);//updateOz expects to be called from percent input
+	}
+	else//not in edit mode
+	{
+		//alert("Not edit mode");
+		$recipeForm.find('li').each(function(){
+			var text = $(this).text().trim().replace(/[\n\r\t]/g,"").replace(/\s\s+/g, " ") ;//removes extra whitespace
+			var amount =  amountRX.exec(text);//extract amount
+			//alert("amount: " + amount);
+			//alert("oldGlassSize: " + $recipeForm.find('.glassSize').prop("oldGlassSize"));
+			var percent = amount / $recipeForm.find('.glassSize').prop("oldGlassSize");//calculate percent from oldGlassSize
+			//alert("percent: " + percent)
+			var newAmount = percent * $recipeForm.find('.glassSize').val();//calculate new amount from percent and new glass size
+			//alert("this.value: " + $recipeForm.find('.glassSize').val());
+			//alert("new amount: " + newAmount);
+			$(this).text(text.replace(amountRX, newAmount));
+		})
+		
+	}
+}
+
 //editOrder click handler, converts recipe to allow editing
 function editOrder(e)
 {
@@ -388,7 +422,12 @@ $(document).ready(function(){
 	$('input.order').click(submitOrder);
     $('button#deleteDrink').click(deleteDrink);
     $('button.editOrder').click(editOrder);
-    
-    
+    $('select.glassSize').change(glassSizeUpdate);
+    $('select.glassSize').focus(function(){
+		//alert("onfocus glassSize" + this.value);
+		this.oldGlassSize = this.value;
+		//alert("old glass size " + this.oldGlassSize);
+		});
+		
     $('.flashes').fadeIn("800000").fadeOut("800000");
 });
